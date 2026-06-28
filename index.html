@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LexAI - Ricerca giuridica italiana</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; }
+  :root {
+    --bg: #f2f6fa;
+    --surface: #ffffff;
+    --surface-2: #eef5f8;
+    --surface-3: #dcebed;
+    --line: #9eb9c9;
+    --line-soft: rgba(255,255,255,0.08);
+    --text: #071528;
+    --muted: #536783;
+    --soft: #174a66;
+    --accent: #0f6f73;
+    --accent-2: #16898e;
+    --petrol: #155d68;
+    --petrol-2: #1d756d;
+    --blue: #155d68;
+    --ok: #0f6f73;
+    --danger: #ee7b7b;
+    --shadow: 0 14px 34px rgba(18,72,95,0.14);
+  }
+
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--text);
+    background: var(--bg);
+  }
+
+  button, textarea, input { font: inherit; }
+  button { cursor: pointer; }
+
+  .app-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  header {
+    height: 90px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 20px;
+    color: #ffffff;
+    border-bottom: 0;
+    background: linear-gradient(90deg, var(--petrol) 0%, var(--petrol-2) 100%);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .logo-mark {
+    width: 58px;
+    height: 58px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    color: #ffffff;
+    background: linear-gradient(135deg, #155d68, #16898e);
+    flex: 0 0 auto;
+  }
+
+  .brand { min-width: 0; }
+  .logo-text { font-size: 34px; line-height: 1; font-weight: 800; letter-spacing: 0; color: #ffffff; }
+  .logo-text span { color: var(--accent-2); }
+  .logo-sub { margin-top: 8px; color: rgba(255,255,255,0.82); font-size: 17px; }
+
+  .assistant-bar {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .assistant-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-2); }
+
+  main {
+    width: min(1320px, 100%);
+    margin: 0 auto;
+    padding: 18px;
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  main.sidebar-open {
+    grid-template-columns: 292px minmax(0, 1fr);
+  }
+
+  .left-sidebar {
+    border: 1px solid #c6d7e4;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.9);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto;
+    transition: width 0.18s ease, grid-template-rows 0.18s ease;
+  }
+
+  .left-sidebar.open {
+    grid-template-rows: auto 1fr;
+  }
+
+  .side-tabs {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    border-bottom: 0;
+    background: #ffffff;
+  }
+
+  .collapse-btn {
+    width: 40px;
+    min-height: 40px;
+    border: 1px solid #c6d7e4;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 16px;
+    display: grid;
+    place-items: center;
+  }
+
+  .left-sidebar.open .side-tabs {
+    border-bottom: 1px solid #c6d7e4;
+  }
+
+  .side-panel {
+    display: none;
+    min-height: 0;
+    overflow: auto;
+    padding: 12px;
+  }
+
+  .side-panel.show {
+    display: block;
+  }
+
+  .left-sidebar:not(.open) .side-panel {
+    display: none;
+  }
+
+  .left-sidebar:not(.open) .btn {
+    width: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+    overflow: hidden;
+    color: transparent;
+    border-radius: 12px;
+    font-size: 0;
+  }
+
+  .left-sidebar:not(.open) .btn::after {
+    content: "";
+  }
+
+  .left-sidebar:not(.open) .btn.active::after {
+    content: "";
+  }
+
+  .chat-panel {
+    border: 1px solid #c6d7e4;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: var(--shadow);
+    display: grid;
+    grid-template-rows: auto auto;
+    overflow: hidden;
+    align-self: start;
+  }
+
+  .chat-scroll {
+    display: none;
+    min-height: 0;
+    max-height: 52vh;
+    padding: 0;
+    overflow: auto;
+    border-bottom: 1px solid #c6d7e4;
+  }
+
+  .chat-panel.has-content {
+    grid-template-rows: minmax(120px, auto) auto;
+  }
+
+  .chat-panel.has-content .chat-scroll {
+    display: block;
+    padding: 18px;
+  }
+
+  .empty-chat {
+    display: none;
+  }
+
+  .message {
+    width: min(780px, 100%);
+    margin: 0 0 16px;
+    display: grid;
+    gap: 7px;
+  }
+  .message.user { margin-left: auto; justify-items: end; }
+  .message.assistant { justify-items: start; }
+  .message-meta { color: var(--muted); font-size: 11px; }
+
+  .bubble {
+    border: 1px solid #c6d7e4;
+    border-radius: 14px;
+    padding: 15px 17px;
+    line-height: 1.7;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+  .user .bubble {
+    background: rgba(31,111,91,0.12);
+    border-color: rgba(31,111,91,0.28);
+  }
+  .assistant .bubble { background: #f7fbfc; }
+
+  .bubble h2 { font-size: 15px; margin: 17px 0 8px; color: var(--petrol); }
+  .bubble h2:first-child { margin-top: 0; }
+  .bubble h3 { font-size: 12px; margin: 14px 0 6px; color: var(--soft); text-transform: uppercase; letter-spacing: 0.06em; }
+  .bubble p { margin: 0 0 10px; }
+  .bubble p:last-child { margin-bottom: 0; }
+  .bubble strong { color: var(--petrol); }
+  .bubble ul, .bubble ol { margin: 8px 0 12px 20px; padding: 0; }
+  .bubble li { margin-bottom: 5px; }
+
+  .cite-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin: 0 2px;
+    border: 1px solid rgba(31,111,91,0.45);
+    border-radius: 6px;
+    color: var(--petrol);
+    background: rgba(31,111,91,0.13);
+    font: 500 10px JetBrains Mono, monospace;
+    text-decoration: none;
+    vertical-align: middle;
+  }
+
+  .sources-result {
+    width: min(780px, 100%);
+    border: 1px solid #c6d7e4;
+    border-radius: 14px;
+    background: #f5fafb;
+    margin: 6px 0 18px;
+    padding: 13px;
+  }
+  .sources-result-title {
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 9px;
+  }
+  .result-source {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 9px;
+    padding: 9px;
+    border-radius: 10px;
+  }
+  .result-source:hover { background: rgba(255,255,255,0.04); }
+  .source-num { color: var(--petrol); font: 500 12px JetBrains Mono, monospace; }
+  .source-name { color: var(--text); font-size: 12px; font-weight: 700; }
+  .source-domain { color: var(--muted); font: 400 11px JetBrains Mono, monospace; margin-top: 2px; }
+  .source-url a { color: var(--blue); font-size: 11px; text-decoration: none; }
+  .source-url a:hover { text-decoration: underline; }
+
+  .loading-row {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 12px;
+    margin: 0 0 14px;
+  }
+  .loading-row.show { display: flex; }
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex: 0 0 auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .composer {
+    border-top: 1px solid #c6d7e4;
+    padding: 14px 16px 12px;
+    background: #f5fafb;
+  }
+  .composer-box {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #ffffff;
+    overflow: hidden;
+  }
+  .composer-box:focus-within {
+    border-color: rgba(23,184,166,0.7);
+    box-shadow: 0 0 0 3px rgba(23,184,166,0.1);
+  }
+  textarea {
+    width: 100%;
+    min-height: 68px;
+    max-height: 230px;
+    resize: vertical;
+    border: 0;
+    outline: 0;
+    padding: 14px 15px;
+    color: var(--text);
+    background: transparent;
+    line-height: 1.55;
+  }
+  textarea::placeholder { color: #758392; }
+
+  .composer-footer {
+    border-top: 1px solid #c6d7e4;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .hint { color: var(--muted); font-size: 11px; }
+
+  .button-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn, .send-btn {
+    min-height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #f6fafb;
+    color: var(--soft);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 11px;
+    font-size: 12px;
+    font-weight: 650;
+    transition: border-color 0.16s, background 0.16s, color 0.16s, transform 0.16s;
+  }
+  .btn:hover { border-color: var(--accent); background: #edf5f1; color: var(--text); }
+  .btn.active { color: #ffffff; background: var(--accent); border-color: var(--accent); }
+  .send-btn {
+    min-width: 112px;
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #ffffff;
+  }
+  .send-btn:hover { transform: translateY(-1px); }
+  .send-btn:disabled, .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .source-select {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .source-select-label {
+    color: var(--muted);
+    font-size: 11px;
+    margin-right: 2px;
+  }
+  .source-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  .source-toggle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .source-toggle span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0 10px;
+    color: var(--muted);
+    background: #ffffff;
+    font-size: 11px;
+    font-weight: 650;
+  }
+  .source-toggle input:checked + span {
+    color: #ffffff;
+    border-color: var(--accent-2);
+    background: var(--accent);
+  }
+
+  .drawer-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .source-group {
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    background: #f7fbfc;
+    padding: 12px;
+  }
+  .group-name {
+    color: var(--soft);
+    font-size: 12px;
+    font-weight: 750;
+    margin-bottom: 9px;
+  }
+  .source-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .source-chip {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    padding: 5px 8px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    background: #ffffff;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .history-list {
+    display: grid;
+    gap: 8px;
+  }
+  .history-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #c6d7e4;
+    border-radius: 12px;
+    padding: 10px 11px;
+    background: #f7fbfc;
+  }
+  .history-title { color: var(--text); font-size: 12px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history-date { color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .history-empty { color: var(--muted); font-size: 12px; }
+
+  .info-strip {
+    display: grid;
+    gap: 6px;
+    padding: 12px 16px 16px;
+    color: #536783;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .error-box {
+    display: none;
+    margin: 0 16px 12px;
+    padding: 12px 14px;
+    border: 1px solid rgba(238,123,123,0.36);
+    border-radius: 12px;
+    color: #ffc4c4;
+    background: rgba(238,123,123,0.08);
+    white-space: pre-wrap;
+    font-size: 13px;
+  }
+  .error-box.show { display: block; }
+
+  footer {
+    height: 32px;
+    display: grid;
+    place-items: center;
+    color: #ffffff;
+    background: var(--petrol);
+    font-size: 17px;
+  }
+
+  @media (max-width: 760px) {
+    header { padding: 0 14px; }
+    .assistant-bar { display: none; }
+    main { grid-template-columns: 1fr; padding: 10px; }
+    main.sidebar-open { grid-template-columns: 1fr; }
+    .left-sidebar, .left-sidebar.open { width: auto; min-height: auto; grid-template-rows: auto 1fr; }
+    .side-tabs { flex-direction: row; }
+    .left-sidebar:not(.open) .btn { width: auto; min-width: 0; padding: 0 11px; color: var(--soft); }
+    .left-sidebar:not(.open) .btn::after { content: ""; }
+    .left-sidebar:not(.open) .side-panel { display: none; }
+    .chat-panel { border-radius: 13px; }
+    .chat-scroll { padding: 15px; }
+    .composer { padding: 12px; }
+    .send-btn, .button-row { width: 100%; }
+    .btn, .send-btn { flex: 1 1 auto; }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <header>
+    <div class="logo-mark" aria-hidden="true">
+      <svg width="42" height="42" viewBox="0 0 48 48" fill="none">
+        <path d="M13 10h24c2.8 0 5 2.2 5 5 0 2.2-1.4 4-3.3 4.7v16.8c0 3-2.4 5.5-5.5 5.5H12.5C8.9 42 6 39.1 6 35.5c0-2.7 1.7-5.1 4.1-6V15c0-2.8 2.2-5 5-5z" fill="#fffaf0"/>
+        <path d="M15 10c-2.8 0-5 2.2-5 5s2.2 5 5 5h24M15 20v15.2c0 3.8-3.2 6.8-6.9 6.8h25.1c3 0 5.5-2.4 5.5-5.5V19.7" stroke="#155d68" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M20 25h13M20 30h13M20 35h9" stroke="#0f6f73" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M10 30h6v5.2c0 3.8-3.2 6.8-6.9 6.8A6.4 6.4 0 0 1 6 35.5c0-2.4 1.4-4.5 4-5.5z" fill="#e2f0ea"/>
+      </svg>
+    </div>
+    <div class="brand">
+      <div class="logo-text">LEX<span>AI</span></div>
+      <div class="logo-sub">Ricerca giuridica italiana</div>
+    </div>
+  </header>
+
+  <main id="mainLayout">
+    <aside class="left-sidebar" id="leftSidebar">
+      <div class="side-tabs">
+        <button class="collapse-btn" id="collapseBtn" type="button" onclick="toggleSidebar()" title="Apri o chiudi pannello">›</button>
+        <button class="btn active" id="historyBtn" type="button" data-short="C" onclick="toggleDrawer('history')">Cronologia</button>
+        <button class="btn" id="fontiBtn" type="button" data-short="F" onclick="toggleDrawer('fonti')">Fonti</button>
+      </div>
+      <div class="side-panel show" id="historyPanel">
+        <div class="history-list" id="historyList"></div>
+      </div>
+      <div class="side-panel" id="fontiPanel">
+        <div class="drawer-grid" id="sourceCatalog"></div>
+      </div>
+    </aside>
+
+    <section class="chat-panel">
+      <div class="chat-scroll" id="chatScroll">
+        <div class="loading-row" id="loadingRow">
+          <div class="spinner"></div>
+          <span id="loadingStep">Comprensione del quesito</span>
+        </div>
+      </div>
+
+      <div class="error-box" id="errorBox"></div>
+
+      <div>
+        <div class="composer">
+          <div class="composer-box">
+            <textarea id="domanda" placeholder="Scrivi il quesito o rispondi all'analisi precedente..."></textarea>
+            <div class="composer-footer">
+              <div class="button-row">
+                <button class="btn" type="button" onclick="newChat()">Nuova chat</button>
+                <button class="btn" type="button" onclick="setGeminiKey()">Chiave Gemini</button>
+                <button class="btn" type="button" onclick="askQuick('Riscrivi l ultima risposta in forma più sintetica, mantenendo solo le fonti essenziali e i riferimenti normativi decisivi.')">Sintetizza</button>
+                <button class="btn" type="button" onclick="askQuick('Rielabora l ultima risposta usando soltanto le fonti più autorevoli e pertinenti. Distingui fonti ufficiali, legittimità, merito e dottrina/prassi.')">Fonti migliori</button>
+              </div>
+              <button class="send-btn" id="btnCerca" type="button" onclick="sendQuestion()">Analizza</button>
+            </div>
+          </div>
+
+          <div class="source-select" id="sourceSelector"></div>
+        </div>
+
+        <div class="info-strip">
+          <div>Pronto per una ricerca ampia, ma controllata: puoi chiedere sintesi, fonti ufficiali, sola Cassazione, decisioni di merito recenti o una strategia pratica.</div>
+          <div>LexAI fornisce analisi a scopo informativo. Non sostituisce la consulenza di un avvocato. Verifica sempre fonti citate e vigenza delle norme.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer>LexAI - by Isina Solutions</footer>
+</div>
+
+<script>
+const HISTORY_KEY = 'lexai_chat_history_v1';
+const API_KEY_STORAGE = 'lexai_gemini_key_v1';
+
+const sourceCatalog = [
+  {
+    id: 'normativa',
+    name: 'Normativa ufficiale',
+    short: 'Normativa',
+    selected: true,
+    items: ['normattiva.it', 'gazzettaufficiale.it', 'parlamento.it', 'senato.it', 'camera.it', 'eur-lex.europa.eu']
+  },
+  {
+    id: 'superiori',
+    name: 'Corti superiori',
+    short: 'Corti superiori',
+    selected: true,
+    items: ['cortedicassazione.it', 'cortecostituzionale.it', 'giustizia-amministrativa.it', 'curia.europa.eu', 'echr.coe.int']
+  },
+  {
+    id: 'merito',
+    name: 'Merito e banche dati aperte',
+    short: 'Merito',
+    selected: true,
+    items: ['apps.dirittopratico.it', 'sentenze.laleggepertutti.it', 'ilcaso.it', 'dirittobancario.it', 'iusletter.com', 'expartecreditoris.it']
+  },
+  {
+    id: 'autorita',
+    name: 'Autorità e arbitrati',
+    short: 'Autorità',
+    selected: true,
+    items: ['agcm.it', 'garanteprivacy.it', 'bancaditalia.it', 'arbitrobancariofinanziario.it', 'consob.it', 'acm.gov.it']
+  },
+  {
+    id: 'dottrina',
+    name: 'Dottrina e aggiornamento',
+    short: 'Dottrina',
+    selected: false,
+    items: ['altalex.com', 'filodiritto.com', 'judicium.it', 'questionegiustizia.it', 'giustiziacivile.com', 'sistemapenale.it']
+  }
+];
+
+const loadingSteps = [
+  'Comprensione del quesito',
+  'Ricerca nelle fonti selezionate',
+  'Verifica dei riferimenti',
+  'Selezione delle fonti più pertinenti',
+  'Sintesi con citazioni verificabili'
+];
+
+let conversationHistory = [];
+let visibleMessages = [];
+let latestSources = [];
+let stepIdx = 0;
+let stepInterval = null;
+let activeDrawer = 'history';
+
+function renderSourceSelector() {
+  const selector = document.getElementById('sourceSelector');
+  selector.innerHTML = '<span class="source-select-label">Fonti da usare:</span>' + sourceCatalog.map(group => `
+    <label class="source-toggle">
+      <input type="checkbox" data-source="${group.id}" ${group.selected ? 'checked' : ''} onchange="updateSourceSelection()">
+      <span>${escapeHtml(group.short)}</span>
+    </label>
+  `).join('');
+}
+
+function renderCatalog() {
+  const root = document.getElementById('sourceCatalog');
+  root.innerHTML = sourceCatalog.map(group => `
+    <div class="source-group">
+      <div class="group-name">${escapeHtml(group.name)}</div>
+      <div class="source-list">
+        ${group.items.map(item => `<span class="source-chip">${escapeHtml(item)}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateSourceSelection() {
+  document.querySelectorAll('[data-source]').forEach(input => {
+    const group = sourceCatalog.find(item => item.id === input.dataset.source);
+    if (group) group.selected = input.checked;
+  });
+}
+
+function setDrawer(name) {
+  const sidebar = document.getElementById('leftSidebar');
+  const main = document.getElementById('mainLayout');
+  activeDrawer = name;
+  sidebar.classList.add('open');
+  main.classList.add('sidebar-open');
+  document.getElementById('collapseBtn').textContent = '‹';
+  document.getElementById('fontiPanel').classList.toggle('show', activeDrawer === 'fonti');
+  document.getElementById('historyPanel').classList.toggle('show', activeDrawer === 'history');
+  document.getElementById('fontiBtn').classList.toggle('active', activeDrawer === 'fonti');
+  document.getElementById('historyBtn').classList.toggle('active', activeDrawer === 'history');
+  if (activeDrawer === 'history' && sidebar.classList.contains('open')) renderHistory();
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('leftSidebar');
+  const main = document.getElementById('mainLayout');
+  const willOpen = !sidebar.classList.contains('open');
+  sidebar.classList.toggle('open', willOpen);
+  main.classList.toggle('sidebar-open', willOpen);
+  document.getElementById('collapseBtn').textContent = willOpen ? '‹' : '›';
+  if (willOpen) setDrawer(activeDrawer);
+}
+
+function toggleDrawer(name) {
+  setDrawer(name);
+}
+
+function askQuick(text) {
+  if (!conversationHistory.length) {
+    document.getElementById('domanda').value = text;
+    document.getElementById('domanda').focus();
+    return;
+  }
+  sendQuestion(text);
+}
+
+function newChat() {
+  conversationHistory = [];
+  visibleMessages = [];
+  latestSources = [];
+  document.querySelector('.chat-panel').classList.remove('has-content');
+  document.getElementById('chatScroll').innerHTML = `
+    <div class="loading-row" id="loadingRow"><div class="spinner"></div><span id="loadingStep">Comprensione del quesito</span></div>
+  `;
+  document.getElementById('errorBox').classList.remove('show');
+  document.getElementById('domanda').value = '';
+}
+
+function getDomain(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; }
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function renderMarkdown(text, supports, sourceOffset) {
+  let html = escapeHtml(text);
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  html = html.replace(/^\d+\.\s(.+)$/gm, '<li>$1</li>');
+  html = html.replace(/^\- (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>[\s\S]*?<\/li>\n?)+/g, match => `<ul>${match}</ul>`);
+
+  const lines = html.split('\n');
+  const out = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (trimmed.startsWith('<h') || trimmed.startsWith('<ul') || trimmed.startsWith('<li')) out.push(trimmed);
+    else out.push(`<p>${trimmed}</p>`);
+  }
+  html = out.join('\n');
+
+  if (supports && supports.length) {
+    supports.forEach(support => {
+      const seg = support.segment?.text;
+      const indices = support.groundingChunkIndices || [];
+      if (!seg || !indices.length) return;
+      const badges = indices.map(idx => {
+        const num = sourceOffset + idx + 1;
+        return `<a class="cite-num" href="#fonte-${num}" onclick="scrollToFonte(${num})">${num}</a>`;
+      }).join('');
+      const escapedSegment = escapeHtml(seg).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').substring(0, 110);
+      if (escapedSegment.length < 12) return;
+      try {
+        const rx = new RegExp(escapedSegment, 'g');
+        let replaced = false;
+        html = html.replace(rx, match => {
+          if (replaced) return match;
+          replaced = true;
+          return match + badges;
+        });
+      } catch(e) {}
+    });
+  }
+
+  return html;
+}
+
+function appendMessage(role, content, meta) {
+  document.querySelector('.chat-panel').classList.add('has-content');
+  const chat = document.getElementById('chatScroll');
+  const empty = document.getElementById('emptyChat');
+  if (empty) empty.remove();
+  const loading = document.getElementById('loadingRow');
+
+  const wrap = document.createElement('article');
+  wrap.className = `message ${role}`;
+  wrap.innerHTML = `
+    <div class="message-meta">${role === 'user' ? 'Tu' : 'LexAI'}${meta ? ' · ' + escapeHtml(meta) : ''}</div>
+    <div class="bubble">${content}</div>
+  `;
+  chat.insertBefore(wrap, loading);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function appendSources(chunks, sourceOffset) {
+  if (!chunks.length) return;
+  const valid = chunks.filter(chunk => chunk.web?.uri);
+  if (!valid.length) return;
+
+  const chat = document.getElementById('chatScroll');
+  const loading = document.getElementById('loadingRow');
+  const box = document.createElement('section');
+  box.className = 'sources-result';
+  box.innerHTML = `<div class="sources-result-title">Fonti consultate</div>` + valid.map((chunk, i) => {
+    const n = sourceOffset + i + 1;
+    const title = chunk.web.title || getDomain(chunk.web.uri);
+    const domain = getDomain(chunk.web.uri);
+    return `
+      <div class="result-source" id="fonte-${n}">
+        <div class="source-num">[${n}]</div>
+        <div>
+          <div class="source-name">${escapeHtml(title)}</div>
+          <div class="source-domain">${escapeHtml(domain)}</div>
+          <div class="source-url"><a href="${escapeHtml(chunk.web.uri)}" target="_blank" rel="noopener">${escapeHtml(chunk.web.uri)}</a></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  chat.insertBefore(box, loading);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function scrollToFonte(n) {
+  const el = document.getElementById('fonte-' + n);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function startSteps() {
+  document.querySelector('.chat-panel').classList.add('has-content');
+  const row = document.getElementById('loadingRow');
+  const step = document.getElementById('loadingStep');
+  row.classList.add('show');
+  stepIdx = 0;
+  step.textContent = loadingSteps[0];
+  stepInterval = setInterval(() => {
+    stepIdx = (stepIdx + 1) % loadingSteps.length;
+    step.textContent = loadingSteps[stepIdx];
+  }, 1700);
+  document.getElementById('chatScroll').scrollTop = document.getElementById('chatScroll').scrollHeight;
+}
+
+function stopSteps() {
+  if (stepInterval) clearInterval(stepInterval);
+  stepInterval = null;
+  document.getElementById('loadingRow').classList.remove('show');
+}
+
+function selectedSourceGroups() {
+  const selected = sourceCatalog.filter(group => group.selected);
+  return selected.length ? selected : sourceCatalog;
+}
+
+function buildSystemPrompt() {
+  const selected = selectedSourceGroups();
+  const sourceLines = selected.map(group => `${group.name.toUpperCase()}: ${group.items.join(', ')}`).join('\n');
+  return `Sei LexAI, un assistente giuridico specializzato nel diritto italiano. Usa Google Search in modo selettivo: devi trovare fonti online verificabili, autorevoli e pertinenti, senza inventare norme o sentenze.
+
+FONTI SELEZIONATE DALL'UTENTE:
+${sourceLines}
+
+METODO:
+1. Cerca prioritariamente nelle fonti selezionate dall'utente.
+2. Parti da fonti ufficiali quando disponibili.
+3. Per giurisprudenza, separa sempre legittimità, costituzionale, amministrativa, merito, arbitrati e autorità.
+4. Se trovi fonti non ufficiali ma utili, usale solo come supporto e dichiaralo.
+5. Se una fonte non è sufficiente o non è verificabile, dillo chiaramente.
+6. Quando l'utente chiede sintesi o follow-up, usa il contesto della chat e mantieni le citazioni migliori.
+
+STRUTTURA CONSIGLIATA:
+## Risposta breve
+## Quadro normativo
+## Giurisprudenza e orientamenti
+## Fonti più utili
+## Strategia o prossimi passi
+
+REGOLE: non inventare sentenze, numeri o link. Cita articoli con riferimento completo. Usa italiano giuridico preciso. Metti in grassetto riferimenti chiave.`;
+}
+
+function readHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
+}
+
+function writeHistory(items) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, 30)));
+}
+
+function saveCurrentHistory() {
+  if (!visibleMessages.length) return;
+  const firstUser = visibleMessages.find(message => message.role === 'user')?.text || 'Nuova analisi';
+  const history = readHistory();
+  const item = {
+    id: Date.now(),
+    title: firstUser.substring(0, 90),
+    date: new Date().toLocaleString('it-IT'),
+    conversationHistory,
+    visibleMessages,
+    latestSources
+  };
+  writeHistory([item].concat(history.filter(old => old.title !== item.title)));
+  renderHistory();
+}
+
+function renderHistory() {
+  const root = document.getElementById('historyList');
+  const history = readHistory();
+  if (!history.length) {
+    root.innerHTML = '<div class="history-empty">Nessuna conversazione salvata.</div>';
+    return;
+  }
+  root.innerHTML = history.map(item => `
+    <div class="history-item">
+      <div>
+        <div class="history-title">${escapeHtml(item.title)}</div>
+        <div class="history-date">${escapeHtml(item.date)}</div>
+      </div>
+      <button class="btn" type="button" onclick="loadHistory(${item.id})">Apri</button>
+    </div>
+  `).join('') + '<button class="btn" type="button" onclick="clearHistory()">Svuota cronologia</button>';
+}
+
+function loadHistory(id) {
+  const item = readHistory().find(entry => entry.id === id);
+  if (!item) return;
+  newChat();
+  conversationHistory = item.conversationHistory || [];
+  visibleMessages = item.visibleMessages || [];
+  latestSources = item.latestSources || [];
+  visibleMessages.forEach(message => appendMessage(message.role, renderMarkdown(message.text || '', [], 0)));
+}
+
+function clearHistory() {
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+}
+
+function getGeminiKey() {
+  return localStorage.getItem(API_KEY_STORAGE) || '';
+}
+
+function setGeminiKey() {
+  const current = getGeminiKey();
+  const key = prompt('Inserisci la tua chiave Gemini API:', current);
+  if (key === null) return current;
+  const clean = key.trim();
+  if (clean) {
+    localStorage.setItem(API_KEY_STORAGE, clean);
+    return clean;
+  }
+  localStorage.removeItem(API_KEY_STORAGE);
+  return '';
+}
+
+function ensureGeminiKey() {
+  const saved = getGeminiKey();
+  if (saved) return saved;
+  return setGeminiKey();
+}
+
+async function sendQuestion(overrideText) {
+  const textarea = document.getElementById('domanda');
+  const domanda = (overrideText || textarea.value).trim();
+  if (!domanda) return;
+
+  const btn = document.getElementById('btnCerca');
+  const errorBox = document.getElementById('errorBox');
+  const t0 = Date.now();
+
+  errorBox.classList.remove('show');
+  const geminiKey = ensureGeminiKey();
+  if (!geminiKey) {
+    errorBox.textContent = 'Inserisci una chiave Gemini API per usare LexAI sul telefono.';
+    errorBox.classList.add('show');
+    return;
+  }
+  btn.disabled = true;
+  appendMessage('user', escapeHtml(domanda));
+  visibleMessages.push({ role: 'user', text: domanda });
+  textarea.value = '';
+  startSteps();
+
+  const requestHistory = conversationHistory.concat([{ role: 'user', parts: [{ text: domanda }] }]);
+
+  try {
+    const response = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: buildSystemPrompt() }] },
+          contents: requestHistory,
+          tools: [{ google_search: {} }],
+          generationConfig: { temperature: 0.12, maxOutputTokens: 5200 }
+        })
+      }
+    );
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || `HTTP ${response.status}`);
+
+    const candidate = data.candidates?.[0];
+    const parts = candidate?.content?.parts || [];
+    const text = parts.filter(part => part.text).map(part => part.text).join('\n');
+    if (!text) throw new Error('Nessuna risposta ricevuta');
+
+    const grounding = candidate?.groundingMetadata || {};
+    const chunks = grounding.groundingChunks || [];
+    const supports = grounding.groundingSupports || [];
+    const sourceOffset = latestSources.length;
+    latestSources = latestSources.concat(chunks.filter(chunk => chunk.web?.uri));
+
+    stopSteps();
+    appendMessage('assistant', renderMarkdown(text, supports, sourceOffset), `${((Date.now() - t0) / 1000).toFixed(1)}s`);
+    appendSources(chunks, sourceOffset);
+
+    conversationHistory = requestHistory.concat([{ role: 'model', parts: [{ text }] }]).slice(-12);
+    visibleMessages.push({ role: 'assistant', text });
+    saveCurrentHistory();
+  } catch (err) {
+    stopSteps();
+    errorBox.textContent = 'Errore: ' + err.message;
+    errorBox.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    textarea.focus();
+  }
+}
+
+document.getElementById('domanda').addEventListener('keydown', event => {
+  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) sendQuestion();
+});
+
+renderSourceSelector();
+renderCatalog();
+renderHistory();
+</script>
+</body>
+</html>
